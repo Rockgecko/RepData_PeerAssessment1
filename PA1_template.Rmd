@@ -1,16 +1,40 @@
 ---
 title: "Reproducible Research: Peer Assessment 1"
+author: Rockgecko
+date: 16-09-15
 output: 
   html_document:
     keep_md: true
 ---
 
+```{r setup, echo=FALSE}
+## Set up
+library(dplyr)
+library(ggplot2)
+data.archive<-"activity.zip"
+data.filename<-"activity.csv"
+```
 
 ## Loading and preprocessing the data
-
-
+```{r load_data}
+unzip("activity.zip",overwrite=TRUE)
+data<-read.csv("activity.csv",header=TRUE)
+```
 
 ## What is mean total number of steps taken per day?
+First need to calculate total steps per day.
+```{r sumbyday}
+by.day<-group_by(data,date)
+daily.data<-summarise(by.day,total_steps=mean(steps,na.rm=TRUE))
+##hist(daily.data$total_steps)
+g<-ggplot(daily.data,aes(total_steps)) + 
+    geom_histogram(col="red",alpha=0.2,binwidth=4) +
+    labs(title="Distribution of total steps per day") +
+    labs(x="Number of steps",y="Count")
+print(g)
+
+```
+
 
 
 
