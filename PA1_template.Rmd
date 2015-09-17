@@ -3,16 +3,17 @@ title: "Reproducible Research: Peer Assessment 1"
 author: Rockgecko
 date: 16-09-15
 output: 
-  html_document:
-    keep_md: true
+html_document:
+keep_md: true
 ---
 
-```{r setup, echo=FALSE}
+```{r setup, echo=FALSE, warning=FALSE}
 ## Set up
 library(dplyr)
 library(ggplot2)
 data.archive<-"activity.zip"
 data.filename<-"activity.csv"
+options(scipen=4, digits=4)
 ```
 
 ## Loading and preprocessing the data
@@ -25,22 +26,36 @@ data<-read.csv("activity.csv",header=TRUE)
 First need to calculate total steps per day.
 ```{r sumbyday}
 by.day<-group_by(data,date)
-daily.data<-summarise(by.day,total_steps=mean(steps,na.rm=TRUE))
-##hist(daily.data$total_steps)
-g<-ggplot(daily.data,aes(total_steps)) + 
-    geom_histogram(col="red",alpha=0.2,binwidth=4) +
+daily.data<-summarise(by.day,total.steps=sum(steps,na.rm=TRUE))
+
+g<-ggplot(daily.data,aes(total.steps)) + 
+    geom_histogram(col="red",alpha=0.2,binwidth=1000) +
     labs(title="Distribution of total steps per day") +
     labs(x="Number of steps",y="Count")
 print(g)
 
+mean.steps=mean(daily.data$total.steps,na.rm=TRUE)
+median.steps=median(daily.data$total.steps,na.rm=TRUE)
 ```
 
+The mean number of steps per day is `r mean.steps` and the median number of steps is `r median.steps`. 
 
 
 
 ## What is the average daily activity pattern?
+```{r sumbyinterval}
+by.interval<-group_by(data,interval)
+interval.data<-summarise(by.interval,mean.steps=mean(steps,na.rm=TRUE))
+g<-ggplot(interval.data,aes(x=interval,y=mean.steps)) + 
+    geom_line(colour="red") +
+    labs(title="Average steps per time interval") +
+    labs(x="Interval",y="Average steps")
+print(g)
 
-
+max.interval=which.max(interval.data$mean.steps)
+max.interval.starttime=interval.data$interval[max.interval]
+```
+The interval with the highest average number of steps is the interval labelled `r max.interval.starttime` (i.e. `r paste(max.interval.starttime,"<=time<",(max.interval.starttime+5))`).
 
 ## Imputing missing values
 
