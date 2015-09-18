@@ -58,7 +58,30 @@ max.interval.starttime=interval.data$interval[max.interval]
 The interval with the highest average number of steps is the interval labelled `r max.interval.starttime` (i.e. `r paste(max.interval.starttime,"<=time<",(max.interval.starttime+5))`).
 
 ## Imputing missing values
+```{r missingvalues1}
+num.NAs<-sum(is.na(data$steps))
+```
+There are `r num.NAs` missing values.
+```{r missingvalues2}
+NAs<-is.na(data$steps)
+data$newsteps<-data$steps
+data$newsteps[NAs]<-interval.data$mean.steps[NAs]
 
+by.day<-group_by(data,date)
+daily.data<-summarise(by.day,total.steps=sum(steps,na.rm=TRUE),total.newsteps=sum(newsteps,na.rm=FALSE))
+
+g<-ggplot(daily.data,aes(total.newsteps)) + 
+    geom_histogram(col="red",alpha=0.2,binwidth=1000) +
+    labs(title="Distribution of total steps per day (missing data replaced)") +
+    labs(x="Number of steps",y="Count")
+print(g)
+
+mean.newsteps=mean(daily.data$total.newsteps,na.rm=FALSE)
+median.newsteps=median(daily.data$total.newsteps,na.rm=FALSE)
+```
+The mean number of steps per day is `r mean.newsteps` and the median number of steps is `r median.newsteps`.
+
+SOMETHING WRONG - WHY STILL NAs?
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
