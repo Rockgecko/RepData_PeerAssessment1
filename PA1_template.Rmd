@@ -13,7 +13,7 @@ library(dplyr)
 library(ggplot2)
 data.archive<-"activity.zip"
 data.filename<-"activity.csv"
-options(scipen=4, digits=4)
+options(scipen=3, digits=3)
 ```
 
 ## Loading and preprocessing the data
@@ -23,7 +23,7 @@ data<-read.csv("activity.csv",header=TRUE)
 ```
 
 ## What is mean total number of steps taken per day?
-First need to calculate total steps per day.
+I first need to calculate total steps per day.
 ```{r sumbyday}
 by.day<-group_by(data,date)
 daily.data<-summarise(by.day,total.steps=sum(steps,na.rm=TRUE))
@@ -43,7 +43,7 @@ The mean number of steps per day is `r mean.steps` and the median number of step
 
 
 ## What is the average daily activity pattern?
-```{r sumbyinterval}
+```{r meanbyinterval}
 by.interval<-group_by(data,interval)
 interval.data<-summarise(by.interval,mean.steps=mean(steps,na.rm=TRUE))
 g<-ggplot(interval.data,aes(x=interval,y=mean.steps)) + 
@@ -63,10 +63,17 @@ num.NAs<-sum(is.na(data$steps))
 ```
 There are `r num.NAs` missing values.
 ```{r missingvalues2}
-NAs<-is.na(data$steps)
-data$newsteps<-data$steps
-data$newsteps[NAs]<-interval.data$mean.steps[NAs]
 
+# Find missing values & replace them with mean value for that time interval across all days 
+NAs<-which(is.na(data$steps))
+data$newsteps<-data$steps
+for (ii in NAs) {
+    interval<-data$interval[ii]
+    ii2<-which(interval.data$interval==interval)
+    data$newsteps[ii]<-interval.data$mean.steps[ii2]
+}
+
+# Calculate the total daily steps after replacement of missing values
 by.day<-group_by(data,date)
 daily.data<-summarise(by.day,total.steps=sum(steps,na.rm=TRUE),total.newsteps=sum(newsteps,na.rm=FALSE))
 
@@ -79,9 +86,26 @@ print(g)
 mean.newsteps=mean(daily.data$total.newsteps,na.rm=FALSE)
 median.newsteps=median(daily.data$total.newsteps,na.rm=FALSE)
 ```
-The mean number of steps per day is `r mean.newsteps` and the median number of steps is `r median.newsteps`.
-
-SOMETHING WRONG - WHY STILL NAs?
+The mean number of steps per day is `r mean.newsteps` and the median number of steps is `r median.newsteps`. These values are slightly higher than the estimates prior to replacement of missing values, and the mean and median are now equal.
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+```{r weekdays}
+# Determine which day of the week each date corresponds to and add to dataset
+data$days<-weekdays(as.POSIXct(data$date))
+data$weekend<-rep("weekday",length(data$days))
+data$weekend[which(data$days=="Saturday"|data$days=="Sunday")]<-"weekend"
+data$weekend<-as.factor(data$weekend)
+
+# calculate mean steps per interval for weekdays and weekend days
+by.interval.weekend<-group_by(data,interval,weekend)
+int.we.data<-summarise(by.interval.weekend,mean.steps=mean(steps,na.rm=TRUE))
+
+# plot mean steps per interval for weekdays and for weekends
+g<-ggplot(int.we.data,aes(x=interval,y=mean.steps)) + 
+    geom_line(colour="red") +
+    facet_grid(weekend ~ .) +
+    labs(title="Average steps per time interval, split between weekdays and weekend days") +
+    labs(x="Interval",y="Average steps")
+print(g)
+```
